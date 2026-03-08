@@ -1,6 +1,8 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate, NavLink } from 'react-router-dom'
 import Dashboard from './components/Dashboard'
+import AlertsPage from './components/AlertsPage'
+import OrdersPage from './components/OrdersPage'
 import { Truck, Navigation, AlertCircle, LayoutDashboard, Settings } from 'lucide-react'
 
 function Sidebar() {
@@ -61,11 +63,11 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route 
               path="/orders" 
-              element={<PageWrapper title="Orders List" description="View all active and past orders here." />} 
+              element={<OrdersPage />} 
             />
             <Route 
               path="/alerts" 
-              element={<PageWrapper title="Alerts Feed" description="View all system alerts and updates here." />} 
+              element={<AlertsPage />} 
             />
             <Route 
               path="/settings" 
