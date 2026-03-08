@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Eye, MoreVertical, Filter } from 'lucide-react';
+import { Eye, BellRing, Filter } from 'lucide-react';
 
-export default function OrdersTable({ orders }) {
+export default function OrdersTable({ orders, onSimulate }) {
   const [filter, setFilter] = useState('All Status');
+  const [isSimulating, setIsSimulating] = useState(null);
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -21,6 +22,12 @@ export default function OrdersTable({ orders }) {
     if (hourDiff < 24) return `${hourDiff} hours ago`;
     const dayDiff = Math.floor(hourDiff / 24);
     return `${dayDiff} day${dayDiff > 1 ? 's' : ''} ago`;
+  };
+
+  const handleSimulateClick = async (id, type) => {
+    setIsSimulating(id);
+    await onSimulate(id, type);
+    setIsSimulating(null);
   };
 
   const filteredOrders = filter === 'All Status' 
@@ -74,7 +81,7 @@ export default function OrdersTable({ orders }) {
               <th>Destination</th>
               <th>Status</th>
               <th>Date</th>
-              <th></th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -92,9 +99,30 @@ export default function OrdersTable({ orders }) {
                   {getTimeAgo(order.updatedAt)}
                 </td>
                 <td>
-                  <div style={{ display: 'flex', gap: 12, color: 'var(--text-muted)' }}>
-                    <Eye size={18} style={{ cursor: 'pointer' }} />
-                    <MoreVertical size={18} style={{ cursor: 'pointer' }} />
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <Eye size={18} style={{ cursor: 'pointer', color: 'var(--text-muted)' }} title="View Details" />
+                    <div className="simulation-menu" style={{ position: 'relative' }}>
+                      <button 
+                        onClick={() => handleSimulateClick(order.id, 'Delivered')}
+                        disabled={isSimulating === order.id}
+                        style={{ 
+                          background: '#f0fdf4', 
+                          border: '1px solid #bbf7d0', 
+                          color: '#16a34a',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                        title="Simulate Delivery Alert"
+                      >
+                        <BellRing size={12} />
+                        Test Alert
+                      </button>
+                    </div>
                   </div>
                 </td>
               </tr>

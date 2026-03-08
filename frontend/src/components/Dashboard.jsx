@@ -44,10 +44,20 @@ export default function Dashboard() {
       setIsModalOpen(false);
       setFormData({ trackingNumber: '' });
       fetchDashboardData();
-    } catch (err) {
-      setSubmitError(err.response?.data?.error || "An error occurred");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSimulate = async (id, type) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      await axios.post(`${apiUrl}/api/orders/${id}/simulate-alert`, { type });
+      // Refresh to show new alert and status
+      fetchDashboardData();
+    } catch (err) {
+      console.error("Simulation failed", err);
+      alert("Failed to trigger simulation: " + (err.response?.data?.error || err.message));
     }
   };
 
@@ -176,7 +186,7 @@ export default function Dashboard() {
 
               <div className="table-section">
                 <h3 className="section-title">Recent Orders</h3>
-                <OrdersTable orders={data.orders} />
+                <OrdersTable orders={data.orders} onSimulate={handleSimulate} />
               </div>
             </div>
 
