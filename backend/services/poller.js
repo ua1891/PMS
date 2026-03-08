@@ -78,39 +78,52 @@ async function processOrderUpdate(order, tcsData) {
   }
 }
 
-// Run cron job every 5 minutes
-function startCronJobs() {
-  cron.schedule("*/5 * * * *", async () => {
-    console.log("[POLLER] Running TCS tracking check...");
-
-    try {
-      // Find orders that are not Delivered and not Returned
-      const activeOrders = await prisma.order.findMany({
-        where: {
-          status: {
-            notIn: ["Delivered", "Returned"]
-          }
-        }
-      });
-
-      for (const order of activeOrders) {
-        try {
-          const tcsData = await getTrackingDetail(order.trackingNumber);
-          if (tcsData.status !== "FAIL") {
-            await processOrderUpdate(order, tcsData);
-          }
-        } catch (error) {
-          console.error(`Failed to track ${order.trackingNumber}: ${error.message}`);
-        }
-        
-        // Add a small delay between requests to avoid rate limits
-        await new Promise(res => setTimeout(res, 500));
+// Fetch orders that are not Delivered and not Returned
+async function fetchActiveOrders() {
+  return await prisma.order.findMany({
+    where: {
+      status: {
+        notIn: ["Delivered", "Returned"]
       }
-    } catch (error) {
-      console.error("[POLLER] Error during cron execution:", error.message);
     }
   });
-  console.log("Cron jobs initialized.");
 }
 
-module.exports = { startCronJobs, processOrderUpdate };
+// Track each order and process updates
+async function trackAndProcessOrders(activeOrders) {
+  for (const order of activeOrders) {
+    try {
+      const tcsData = await getTrackingDetail(order.trackingNumber);
+      if (tcsData.status !== "FAIL") {
+        await processOrderUpdate(order, tcsData);
+      }
+    } catch (error) {
+      console.error(`Failed to track ${order.trackingNumber}: ${error.message}`);
+    }
+    
+    // Add a small delay between requests to avoid rate limits
+    await new Promise(res => setTimeout(res, 500));
+  }
+}
+
+// Main logic for the tracking cycle
+async function runTrackingCycle() {
+  console.log("[POLLER] Running TCS tracking check...");
+  try {
+    const activeOrders = await fetchActiveOrders();
+    await trackAndProcessOrders(activeOrders);
+  } catch (error) {
+    console.error("[POLLER] Error during tracking cycle:", error.message);
+  }
+}
+
+// Run cron job based on frequency
+function startCronJobs() {
+  const CRON_SCHEDULE = process.env.POLLING_SCHEDULE || "*/5 * * * *";
+  
+  cron.schedule(CRON_SCHEDULE, runTrackingCycle);
+  
+  console.log(`Cron jobs initialized with schedule: ${CRON_SCHEDULE}`);
+}
+
+module.exports = { startCronJobs, processOrderUpdate, runTrackingCycle, fetchActiveOrders };
