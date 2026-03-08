@@ -1,0 +1,116 @@
+const cron = require("node-cron");
+const { PrismaClient } = require("@prisma/client");
+const { getTrackingDetail } = require("./tcs");
+const { sendAlertEmail } = require("./email");
+
+const prisma = new PrismaClient();
+
+// Detect status changes and trigger alerts
+async function processOrderUpdate(order, tcsData) {
+  // If there's no delivery info, skip
+  if (!tcsData.deliveryinfo || tcsData.deliveryinfo.length === 0) return;
+
+  // The latest status is usually the first element or determined by datetime
+  // Let's take the first one assuming it's latest
+  const latestTcsStatus = tcsData.deliveryinfo[0].status;
+  const currentStatus = order.status;
+
+  // Normalized statuses from TCS API vs our DB
+  let newStatus = currentStatus;
+  let alertType = null;
+  let message = "";
+
+  if (latestTcsStatus === "Delivered" && currentStatus !== "Delivered") {
+    newStatus = "Delivered";
+    alertType = "Delivery Confirmed";
+    message = "Parcel successfully delivered to the customer.";
+  } else if (
+    latestTcsStatus === "Awaiting Receiver Collection" &&
+    currentStatus !== "Pickup Ready"
+  ) {
+    newStatus = "Pickup Ready";
+    alertType = "Pickup Ready";
+    message = "Parcel has arrived at TCS office and is ready for pickup.";
+  } else if (
+    latestTcsStatus.includes("Return") &&
+    currentStatus !== "Returned"
+  ) {
+    newStatus = "Returned";
+    alertType = "Return Initiated";
+    message = "Parcel was marked as returned by TCS. Immediate action needed.";
+  } else if (
+    latestTcsStatus.includes("Delay") &&
+    currentStatus !== "Delayed Shipment"
+  ) {
+    newStatus = "Delayed Shipment";
+    alertType = "Delayed Shipment";
+    message = "Parcel is experiencing a delay in transit.";
+  } else if (
+    latestTcsStatus === "Out For Delivery" &&
+    currentStatus === "Pending"
+  ) {
+    newStatus = "In Transit";
+  }
+
+  // Update DB and Send Email if status changed
+  if (newStatus !== currentStatus) {
+    console.log(`Order ${order.trackingNumber}: Status changed ${currentStatus} -> ${newStatus}`);
+    
+    // Update order status
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { status: newStatus, statusDetails: latestTcsStatus }
+    });
+
+    // Create alert and trigger email if it's a significant alertType
+    if (alertType) {
+      await prisma.alert.create({
+        data: {
+          orderId: order.id,
+          type: alertType,
+          message: message,
+        }
+      });
+
+      // Send Email to Vendor
+      await sendAlertEmail(order, alertType, message);
+    }
+  }
+}
+
+// Run cron job every 5 minutes
+function startCronJobs() {
+  cron.schedule("*/5 * * * *", async () => {
+    console.log("[POLLER] Running TCS tracking check...");
+
+    try {
+      // Find orders that are not Delivered and not Returned
+      const activeOrders = await prisma.order.findMany({
+        where: {
+          status: {
+            notIn: ["Delivered", "Returned"]
+          }
+        }
+      });
+
+      for (const order of activeOrders) {
+        try {
+          const tcsData = await getTrackingDetail(order.trackingNumber);
+          if (tcsData.status !== "FAIL") {
+            await processOrderUpdate(order, tcsData);
+          }
+        } catch (error) {
+          console.error(`Failed to track ${order.trackingNumber}: ${error.message}`);
+        }
+        
+        // Add a small delay between requests to avoid rate limits
+        await new Promise(res => setTimeout(res, 500));
+      }
+    } catch (error) {
+      console.error("[POLLER] Error during cron execution:", error.message);
+    }
+  });
+  console.log("Cron jobs initialized.");
+}
+
+module.exports = { startCronJobs, processOrderUpdate };
