@@ -1,6 +1,6 @@
 # TrackFlow Automated Notification System
 
-Welcome to the TrackFlow application! This repository contains both the frontend (React + Vite) and the backend (Node.js + Express + Prisma) architectures.
+Welcome to the TrackFlow application! For a detailed understanding of what this project is and how it works, please refer to the **[Project Overview](OVERVIEW.md)**.
 
 ## Prerequisites
 To run this application, you must first install Node.js (https://nodejs.org/) on your machine.
