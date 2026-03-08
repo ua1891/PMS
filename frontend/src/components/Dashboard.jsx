@@ -18,7 +18,8 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/orders/dashboard');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await axios.get(`${apiUrl}/api/orders/dashboard`);
       setData(res.data);
       setError(null);
     } catch (err) {
@@ -38,7 +39,8 @@ export default function Dashboard() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      await axios.post('http://localhost:5000/api/orders', formData);
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      await axios.post(`${apiUrl}/api/orders`, formData);
       setIsModalOpen(false);
       setFormData({ trackingNumber: '' });
       fetchDashboardData();
