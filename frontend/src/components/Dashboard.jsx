@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import client from '../api/client';
 import { Package, CheckCircle, AlertTriangle, TrendingUp, Plus, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import OrdersTable from './OrdersTable';
@@ -9,7 +9,7 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,8 +18,7 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const res = await axios.get(`${apiUrl}/api/orders/dashboard`);
+      const res = await client.get(`/orders/dashboard`);
       setData(res.data);
       setError(null);
     } catch (err) {
@@ -39,8 +38,7 @@ export default function Dashboard() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      await axios.post(`${apiUrl}/api/orders`, formData);
+      await client.post(`/orders`, formData);
       setIsModalOpen(false);
       setFormData({ trackingNumber: '' });
       fetchDashboardData();
@@ -51,8 +49,7 @@ export default function Dashboard() {
 
   const handleSimulate = async (id, type) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      await axios.post(`${apiUrl}/api/orders/${id}/simulate-alert`, { type });
+      await client.post(`/orders/${id}/simulate-alert`, { type });
       // Refresh to show new alert and status
       fetchDashboardData();
     } catch (err) {
@@ -75,7 +72,7 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
-      
+
       {error && <div style={{ padding: '16px', background: '#fee2e2', color: '#b91c1c', borderRadius: '12px', marginBottom: '24px' }}>{error}</div>}
 
       {/* Modal */}
@@ -92,16 +89,16 @@ export default function Dashboard() {
             <form onSubmit={handleAddShipment}>
               <div className="form-group">
                 <label>TCS Tracking Number</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
+                <input
+                  type="text"
+                  className="form-input"
                   value={formData.trackingNumber}
-                  onChange={e => setFormData({trackingNumber: e.target.value})}
-                  placeholder="e.g. 1234567890" 
-                  required 
+                  onChange={e => setFormData({ trackingNumber: e.target.value })}
+                  placeholder="e.g. 1234567890"
+                  required
                   autoFocus
                 />
-                <p style={{marginTop: 8, fontSize: 13, color: 'var(--text-muted)'}}>
+                <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text-muted)' }}>
                   Customer details will be fetched automatically from TCS.
                 </p>
               </div>
@@ -129,7 +126,7 @@ export default function Dashboard() {
               <div className="metric-value">{data.metrics.activeOrders}</div>
               <div className="metric-trend trend-up">Current in transit</div>
             </div>
-            
+
             <div className="metric-card">
               <div className="metric-header">
                 <span className="metric-title">Delivered Today</span>
@@ -172,14 +169,14 @@ export default function Dashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={data.graphData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 13, fontWeight: 500}} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 13, fontWeight: 500}} dx={-10} />
-                    <Tooltip 
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 13, fontWeight: 500 }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 13, fontWeight: 500 }} dx={-10} />
+                    <Tooltip
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)' }}
                     />
-                    <Line type="monotone" dataKey="Total" stroke="#4f46e5" strokeWidth={3} dot={{r: 4}} activeDot={{r: 6}} />
-                    <Line type="monotone" dataKey="Delivered" stroke="#22c55e" strokeWidth={3} dot={{r: 4}} />
-                    <Line type="monotone" dataKey="Pending" stroke="#3b82f6" strokeWidth={3} dot={{r: 4}} />
+                    <Line type="monotone" dataKey="Total" stroke="#4f46e5" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="Delivered" stroke="#22c55e" strokeWidth={3} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="Pending" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

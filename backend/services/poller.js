@@ -5,17 +5,8 @@ const { sendAlertEmail } = require("./email");
 
 const prisma = new PrismaClient();
 
-// Detect status changes and trigger alerts
-async function processOrderUpdate(order, tcsData) {
-  // If there's no delivery info, skip
-  if (!tcsData.deliveryinfo || tcsData.deliveryinfo.length === 0) return;
-
-  // The latest status is usually the first element or determined by datetime
-  // Let's take the first one assuming it's latest
-  const latestTcsStatus = tcsData.deliveryinfo[0].status;
-  const currentStatus = order.status;
-
-  // Normalized statuses from TCS API vs our DB
+// Helper to determine status and alerts
+function determineNewStatus(currentStatus, latestTcsStatus) {
   let newStatus = currentStatus;
   let alertType = null;
   let message = "";
@@ -51,6 +42,21 @@ async function processOrderUpdate(order, tcsData) {
   ) {
     newStatus = "In Transit";
   }
+
+  return { newStatus, alertType, message };
+}
+
+// Detect status changes and trigger alerts
+async function processOrderUpdate(order, tcsData) {
+  // If there's no delivery info, skip
+  if (!tcsData.deliveryinfo || tcsData.deliveryinfo.length === 0) return;
+
+  // The latest status is usually the first element or determined by datetime
+  // Let's take the first one assuming it's latest
+  const latestTcsStatus = tcsData.deliveryinfo[0].status;
+  const currentStatus = order.status;
+
+  const { newStatus, alertType, message } = determineNewStatus(currentStatus, latestTcsStatus);
 
   // Update DB and Send Email if status changed
   if (newStatus !== currentStatus) {

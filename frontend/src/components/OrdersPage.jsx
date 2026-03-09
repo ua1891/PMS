@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import client from '../api/client';
 import OrdersTable from './OrdersTable';
 
 export default function OrdersPage() {
@@ -9,8 +9,7 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const res = await axios.get(`${apiUrl}/api/orders/dashboard`);
+      const res = await client.get(`/orders/dashboard`);
       setOrders(res.data.orders);
       setError(null);
     } catch (err) {
@@ -24,8 +23,7 @@ export default function OrdersPage() {
   // Handler for simulation from the orders page
   const handleSimulate = async (id, type) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      await axios.post(`${apiUrl}/api/orders/${id}/simulate-alert`, { type });
+      await client.post(`/orders/${id}/simulate-alert`, { type });
       fetchOrders();
     } catch (err) {
       console.error("Simulation failed", err);

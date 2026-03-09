@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, BellRing, Filter } from 'lucide-react';
+import { getTimeAgo } from '../utils/dateUtils';
 
 export default function OrdersTable({ orders, onSimulate }) {
   const [filter, setFilter] = useState('All Status');
@@ -15,14 +16,7 @@ export default function OrdersTable({ orders, onSimulate }) {
     }
   };
 
-  const getTimeAgo = (dateString) => {
-    const minDiff = Math.floor((new Date() - new Date(dateString)) / 60000);
-    if (minDiff < 60) return `${minDiff} mins ago`;
-    const hourDiff = Math.floor(minDiff / 60);
-    if (hourDiff < 24) return `${hourDiff} hours ago`;
-    const dayDiff = Math.floor(hourDiff / 24);
-    return `${dayDiff} day${dayDiff > 1 ? 's' : ''} ago`;
-  };
+
 
   const handleSimulateClick = async (id, type) => {
     setIsSimulating(id);
@@ -30,38 +24,24 @@ export default function OrdersTable({ orders, onSimulate }) {
     setIsSimulating(null);
   };
 
-  const filteredOrders = filter === 'All Status' 
-    ? orders 
+  const filteredOrders = filter === 'All Status'
+    ? orders
     : orders.filter(o => o.status === filter);
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
-        <input 
-          type="text" 
-          placeholder="Search by tracking or customer..." 
-          style={{ 
-            flex: 1, 
-            padding: '10px 16px', 
-            borderRadius: 8, 
-            border: '1px solid var(--border-color)',
-            outline: 'none',
-            fontSize: 14
-          }} 
+      <div className="orders-table-controls">
+        <input
+          type="text"
+          placeholder="Search by tracking or customer..."
+          className="search-input"
         />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="filter-group">
           <Filter size={18} color="var(--text-muted)" />
-          <select 
+          <select
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            style={{ 
-              padding: '10px 16px', 
-              borderRadius: 8, 
-              border: '1px solid var(--border-color)',
-              outline: 'none',
-              backgroundColor: 'white',
-              fontSize: 14
-            }}
+            className="filter-select"
           >
             <option>All Status</option>
             <option>In Transit</option>
@@ -99,24 +79,13 @@ export default function OrdersTable({ orders, onSimulate }) {
                   {getTimeAgo(order.updatedAt)}
                 </td>
                 <td>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <Eye size={18} style={{ cursor: 'pointer', color: 'var(--text-muted)' }} title="View Details" />
-                    <div className="simulation-menu" style={{ position: 'relative' }}>
-                      <button 
+                  <div className="order-actions">
+                    <Eye size={18} className="action-icon" title="View Details" />
+                    <div className="simulation-menu-container">
+                      <button
                         onClick={() => handleSimulateClick(order.id, 'Delivered')}
                         disabled={isSimulating === order.id}
-                        style={{ 
-                          background: '#f0fdf4', 
-                          border: '1px solid #bbf7d0', 
-                          color: '#16a34a',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          fontSize: '11px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
+                        className="test-alert-btn"
                         title="Simulate Delivery Alert"
                       >
                         <BellRing size={12} />

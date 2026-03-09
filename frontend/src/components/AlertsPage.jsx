@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import client from '../api/client';
 import Alerts from './Alerts';
 
 export default function AlertsPage() {
@@ -9,8 +9,7 @@ export default function AlertsPage() {
 
   const fetchAlerts = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const res = await axios.get(`${apiUrl}/api/orders/dashboard`);
+      const res = await client.get(`/orders/dashboard`);
       setAlerts(res.data.alerts);
       setError(null);
     } catch (err) {

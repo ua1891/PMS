@@ -1,9 +1,10 @@
 import React from 'react';
 import { Bell, PackageSearch, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { getTimeAgo } from '../utils/dateUtils';
 
 export default function Alerts({ alerts }) {
   const getIcon = (type) => {
-    switch(type) {
+    switch (type) {
       case 'Pickup Ready': return <PackageSearch size={20} className="alert-icon" />;
       case 'Return Initiated': return <AlertCircle size={20} className="alert-icon" />;
       case 'Delivery Confirmed': return <CheckCircle size={20} className="alert-icon" />;
@@ -13,7 +14,7 @@ export default function Alerts({ alerts }) {
   };
 
   const getAlertClass = (type) => {
-    switch(type) {
+    switch (type) {
       case 'Pickup Ready': return 'ready';
       case 'Return Initiated': return 'returned';
       case 'Delivery Confirmed': return 'delivered';
@@ -22,14 +23,7 @@ export default function Alerts({ alerts }) {
     }
   };
 
-  const getTimeAgo = (dateString) => {
-    const minDiff = Math.floor((new Date() - new Date(dateString)) / 60000);
-    if (minDiff < 60) return `${minDiff} mins ago`;
-    const hourDiff = Math.floor(minDiff / 60);
-    if (hourDiff < 24) return `${hourDiff} hours ago`;
-    const dayDiff = Math.floor(hourDiff / 24);
-    return `${dayDiff} day${dayDiff > 1 ? 's' : ''} ago`;
-  };
+
 
   return (
     <div className="alerts-feed">
@@ -42,7 +36,7 @@ export default function Alerts({ alerts }) {
           {alerts.length}
         </div>
       </div>
-      
+
       <div className="alerts-list">
         {alerts.map(alert => (
           <div key={alert.id} className={`alert-item ${getAlertClass(alert.type)}`}>
